@@ -58,13 +58,15 @@
 #define DEFAULT_INTERNAL_SOCK "/tmp/wifidog.sock"
 #define DEFAULT_AUTHSERVPORT 80
 #define DEFAULT_AUTHSERVSSLPORT 443
+
+#define DEFAULT_OAUTHSERVERPORT 80
 /** Note that DEFAULT_AUTHSERVSSLAVAILABLE must be 0 or 1, even if the config file syntax is yes or no */
 #define DEFAULT_AUTHSERVSSLAVAILABLE 0
 /** Note:  The path must be prefixed by /, and must be suffixed /.  Put / for the server root.*/
-#define DEFAULT_AUTHSERVPATH "/wifidog/"
+#define DEFAULT_AUTHSERVPATH "/api/skywifi/"
 #define DEFAULT_AUTHSERVLOGINPATHFRAGMENT "login/?"
 #define DEFAULT_AUTHSERVPORTALPATHFRAGMENT "portal/?"
-#define DEFAULT_AUTHSERVMSGPATHFRAGMENT "gw_message.php?"
+#define DEFAULT_AUTHSERVMSGPATHFRAGMENT "gw_message/?"
 #define DEFAULT_AUTHSERVPINGPATHFRAGMENT "ping/?"
 #define DEFAULT_AUTHSERVAUTHPATHFRAGMENT "auth/?"
 /*@}*/ 
@@ -88,6 +90,15 @@ typedef struct _auth_serv_t {
     char *last_ip;	/**< @brief Last ip used by authserver */
     struct _auth_serv_t *next;
 } t_auth_serv;
+
+//hector add 2014/3/13
+typedef struct _oauth_serv_t
+{
+    char *oauthserv_hostname;
+    char *oauthserv_http_port;
+    struct _oauth_serv_t *next;
+} t_oauth_serv;
+//hector end
 
 /**
  * Firewall targets
@@ -148,6 +159,9 @@ typedef struct {
     int gw_port;		/**< @brief Port the webserver will run on */
     
     t_auth_serv	*auth_servers;	/**< @brief Auth servers list */
+    
+    t_oauth_serv *oauth_servers; //hector add oauth servers list
+
     char *httpdname;		/**< @brief Name the web server will return when
 				     replying to a request */
     int httpdmaxconn;		/**< @brief Used by libhttpd, not sure what it

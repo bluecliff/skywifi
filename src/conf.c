@@ -136,7 +136,8 @@ static const struct {
     //hector add
     { "oauthserverhostname",    oOauthServerHostname },
     { "oauthserverport",    oOauthServerHTTPPort },
-    //
+    //hector end
+
 	{ "loginscriptpathfragment",	oAuthServLoginScriptPathFragment },
 	{ "portalscriptpathfragment",	oAuthServPortalScriptPathFragment },
 	{ "msgscriptpathfragment",	oAuthServMsgScriptPathFragment },
@@ -182,6 +183,9 @@ config_init(void)
 	config.gw_address = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
 	config.auth_servers = NULL;
+	
+	config.oauth_servers = NULL; //hector add 
+
 	config.httpdname = NULL;
 	config.httpdrealm = DEFAULT_HTTPDNAME;
 	config.httpdusername = NULL;
@@ -222,6 +226,102 @@ config_parse_token(const char *cp, const char *filename, int linenum)
 	debug(LOG_ERR, "%s: line %d: Bad configuration option: %s",
 			filename, linenum, cp);
 	return oBadOption;
+}
+
+static void
+parse_oauth_server(FILE *file, const char *filename, int* linenum)
+{
+	char *host=NULL,
+		 *p1=NULL,
+		 *p2=NULL
+		 line[MAX_BUF];
+	int http_port,
+		opcode;
+	t_oauth_serv *new,
+				 *tmp;
+
+	http_port=DEFAULT_OAUTHSERVERPORT;
+
+	while(memset(line,0,MAX_BUF) && fgets(line,MAX_BUF-1,file) &&(strchr(line,'}')==NULL) )
+	{
+		(*linenum)++;
+		for(p1=line,isblank(*p1);p1++);
+		/* End at end of line */
+		if ((p2 = strchr(p1, '#')) != NULL) 
+		{
+			*p2 = '\0';
+		} 
+		else if ((p2 = strchr(p1, '\r')) != NULL)
+		{
+			*p2 = '\0';
+		} 
+		else if ((p2 = strchr(p1, '\n')) != NULL) 
+		{
+			*p2 = '\0';
+		}
+
+		if(strlen(p1)>0)
+		{
+			p2 = p1;
+			/* keep going until word boundary is found. */
+			while ((*p2 != '\0') && (!isblank(*p2)))
+				p2++;
+			/* Terminate first word. */
+			*p2 = '\0';
+			p2++;
+
+			/* skip all further blanks. */
+			while (isblank(*p2))
+				p2++;
+			
+			/* Get opcode */
+			opcode = config_parse_token(p1, filename, *linenum);
+			switch(opcode)
+			{
+				case oOauthServerHostname:
+					host=safe_strdup(p2);
+					break;
+				case oOauthServerHTTPPort:
+					http_port=atoi(p2);
+					break;
+				case oBadOption:
+				default:
+					debug(LOG_ERR, "Bad option on line %d "
+							"in %s.", *linenum,
+							filename);
+					debug(LOG_ERR, "Exiting...");
+					exit(-1);
+					break;
+			}
+		}
+
+	}
+	/* only proceed if we have an host */
+	if (host == NULL)
+		return;
+
+	debug(LOG_DEBUG, "Adding %s:%dto the oauth server list",
+			host, http_port);
+
+	/* Allocate memory */
+	new = safe_malloc(sizeof(t_oauth_serv));
+
+	/* Fill in struct */
+	memset(new, 0, sizeof(t_oauth_serv)); /*< Fill all with NULL */
+	new->oauthserv_hostname = host;
+	new->oauthserv_http_port = http_port;
+
+	/* If it's the first, add to config, else append to last server */
+	if (config.oauth_servers == NULL) {
+		config.oauth_servers = new;
+	} 
+	else 
+	{
+		for (tmp = config.oauth_servers; tmp->next != NULL;tmp = tmp->next);
+		tmp->next = new;
+	}
+
+	debug(LOG_DEBUG, "OAuth server added");
 }
 
 /** @internal
