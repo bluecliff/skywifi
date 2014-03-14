@@ -127,7 +127,7 @@ execute(const char *cmd_line, int quiet)
 }
 
 	struct in_addr *
-wd_gethostbyname(const char *name)
+wd_gethostbyname(const char *name,int sig=1)
 {
 	struct hostent *he;
 	struct in_addr *h_addr, *in_addr_temp;
@@ -145,8 +145,14 @@ wd_gethostbyname(const char *name)
 		UNLOCK_GHBN();
 		return NULL;
 	}
-
-	mark_online();
+	
+	//hector add 2014/3/14
+	if(sig)
+	{
+		mark_online();
+	}
+	//hector end
+	
 
 	in_addr_temp = (struct in_addr *)he->h_addr_list[0];
 	h_addr->s_addr = in_addr_temp->s_addr;
