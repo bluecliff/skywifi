@@ -134,6 +134,7 @@ static const struct {
 	{ "httpport",			oAuthServHTTPPort },
 	{ "path",			oAuthServPath },
     //hector add
+	{ "oauthserver",	oOauthServer },
     { "oauthserverhostname",    oOauthServerHostname },
     { "oauthserverport",    oOauthServerHTTPPort },
     //hector end
@@ -817,6 +818,13 @@ config_read(const char *filename)
 					parse_auth_server(fd, filename,
 							&linenum);
 					break;
+			
+				//hector add 2014/3/14
+				case oOauthServer:
+					parse_oauth_server(fd,filename,&linenum);
+					break;
+				//hector end
+					
 				case oFirewallRuleSet:
 					parse_firewall_ruleset(p1, fd, filename, &linenum);
 					break;
@@ -948,7 +956,9 @@ config_validate(void)
 {
 	config_notnull(config.gw_interface, "GatewayInterface");
 	config_notnull(config.auth_servers, "AuthServer");
-
+	//hector add 2014/3/14
+	config_notnull(config.oauth_servers,"OauthServer");
+	//hector end
 	if (missing_parms) {
 		debug(LOG_ERR, "Configuration is not complete, exiting...");
 		exit(-1);
