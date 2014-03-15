@@ -134,9 +134,9 @@ static const struct {
 	{ "httpport",			oAuthServHTTPPort },
 	{ "path",			oAuthServPath },
     //hector add
-	{ "oauthserver",	oOauthServer },
-    { "oauthserverhostname",    oOauthServerHostname },
-    { "oauthserverport",    oOauthServerHTTPPort },
+	{ "oauthserver",		oOauthServer },
+	{ "oauthserverhostname",    	oOauthServerHostname },
+	{ "oauthserverport",    	oOauthServerHTTPPort },
     //hector end
 
 	{ "loginscriptpathfragment",	oAuthServLoginScriptPathFragment },
