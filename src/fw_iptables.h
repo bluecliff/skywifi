@@ -36,6 +36,7 @@
 #define TABLE_WIFIDOG_WIFI_TO_ROUTER "WiFiDog_$ID$_WIFI2Router"
 #define TABLE_WIFIDOG_INCOMING  "WiFiDog_$ID$_Incoming"
 #define TABLE_WIFIDOG_AUTHSERVERS "WiFiDog_$ID$_AuthServers"
+#define TABLE_WIFIDOG_OAUTHSERVERS "WifiDog_$ID$_OauthServers"
 #define TABLE_WIFIDOG_GLOBAL  "WiFiDog_$ID$_Global"
 #define TABLE_WIFIDOG_VALIDATE  "WiFiDog_$ID$_Validate"
 #define TABLE_WIFIDOG_KNOWN     "WiFiDog_$ID$_Known"
@@ -58,6 +59,11 @@ void iptables_fw_set_authservers(void);
 
 /** @brief Clears the authservers table */
 void iptables_fw_clear_authservers(void);
+
+//hector add 2014/3/15
+void iptables_fw_set_oauthservers(void);
+void iptables_fw_clear_oauthservers(void);
+//hector end
 
 /** @brief Destroy the firewall */
 int iptables_fw_destroy(void);

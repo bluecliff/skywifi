@@ -231,6 +231,69 @@ iptables_fw_set_authservers(void)
 
 }
 
+//hector add 2014/3/14
+void iptables_fw_clean_oauthservers(void)
+{
+	iptables_do_command("-t filter -F " TABLE_WIFIDOG_OAUTHSERVERS);
+	iptables_do_command("-t nat -F " TABLE_WIFIDOG_OAUTHSERVERS);
+}
+
+void iptables_fw_set_oauthservers(void)
+{
+	const s_config *config;
+	t_oauth_serv *oauth_server;
+
+	config = config_get_config();
+
+	for (oauth_server = config->oauth_servers; oauth_server != NULL; oauth_server = oauth_server->next) {
+		if (oauth_server->last_ip && strcmp(oauth_server->last_ip, "0.0.0.0") != 0) {
+			iptables_do_command("-t filter -A " TABLE_WIFIDOG_OAUTHSERVERS " -d %s -j ACCEPT", oauth_server->last_ip);
+			iptables_do_command("-t nat -A " TABLE_WIFIDOG_OAUTHSERVERS " -d %s -j ACCEPT", oauth_server->last_ip);
+		}
+	}
+
+	//const s_config *config;
+	//t_oauth_serv *oauth_server;
+	//config = config_get_config();
+	//struct in_addr *h_addr;
+	//char* ip=NULL;
+	
+	//for(oauth_server = config->oauth_servers;oauth_server != NULL;oauth_server =oauth_server->next){
+	//	h_addr = wd_gethostbyname(oauth_servers->oauthserv_hostname,0);
+	//	if(!h_addr) {
+	//	/*
+	//	 * DNS resolving it failed
+	//	 */
+	//		debug(LOG_DEBUG, "Resolving oauth server [%s] failed",  hostname);
+	//	}
+	//	else{
+	//		ip = safe_strdup(inet_ntoa(*h_addr));
+	//		debug(LOG_DEBUG, "Resolving oauth server [%s] succeeded = [%s]", hostname, ip);
+	//		if (!oauth_server->last_ip || strcmp(oauth_server->last_ip, ip) != 0) {
+	//			/*
+	//			 * But the IP address is different from the last one we knew
+	//			 * Update it
+	//			 */
+	//			debug(LOG_DEBUG, "Updating last_ip IP of oauth server [%s] to [%s]", hostname, ip);
+	//			if (oauth_server->last_ip) free(oauth_server->last_ip);
+	//			oauth_server->last_ip = ip;
+
+	//			/* Update firewall rules */
+	//			iptables_do_command("-t filter -A " TABLE_WIFIDOG_OAUTHSERVERS " -d %s -j ACCEPT", oauth_server->last_ip);
+	//			iptables_do_command("-t nat -A " TABLE_WIFIDOG_OAUTHSERVERS " -d %s -j ACCEPT", oauth_server->last_ip);
+	//		}
+	//		else {
+	//			/*
+	//			 * IP is the same as last time
+	//			 */
+	//			free(ip);
+	//		}
+	//		free(h_addr);
+	//	}
+	//}
+}
+//hector end
+
 /** Initialize the firewall rules
 */
 	int
@@ -289,7 +352,10 @@ iptables_fw_init(void)
 	iptables_do_command("-t nat -N " TABLE_WIFIDOG_GLOBAL);
 	iptables_do_command("-t nat -N " TABLE_WIFIDOG_UNKNOWN);
 	iptables_do_command("-t nat -N " TABLE_WIFIDOG_AUTHSERVERS);
-
+	//hector add 2014/3/15
+	iptables_do_command("-t nat -N " TABLE_WIFIDOG_OAUTHSERVERS);
+	//hector end
+	
 	/* Assign links and rules to these new chains */
 	iptables_do_command("-t nat -A PREROUTING -i %s -j " TABLE_WIFIDOG_OUTGOING, config->gw_interface);
 
@@ -309,6 +375,9 @@ iptables_fw_init(void)
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_UNKNOWN);
 
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_UNKNOWN " -j " TABLE_WIFIDOG_AUTHSERVERS);
+	//hector add 2014/3/15
+	iptables_do_command("-t nat -A " TABLE_WIFIDOG_UNKNOWN " -j " TABLE_WIFIDOG_OAUTHSERVERS);
+	//hector end
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_UNKNOWN " -j " TABLE_WIFIDOG_GLOBAL);
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_UNKNOWN " -p tcp --dport 80 -j REDIRECT --to-ports %d", gw_port);
 
@@ -322,6 +391,10 @@ iptables_fw_init(void)
 	/* Create new chains */
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_WIFI_TO_INTERNET);
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_AUTHSERVERS);
+	//hector add 2014/3/15
+	iptables_do_command("-t filter -N " TABLE_WIFIDOG_OAUTHSERVERS);
+	//hector end
+	
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_LOCKED);
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_GLOBAL);
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_VALIDATE);
@@ -348,7 +421,12 @@ iptables_fw_init(void)
 
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_AUTHSERVERS);
 	iptables_fw_set_authservers();
-
+	
+	//hector add 2014/3/15
+	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_OAUTHSERVERS);
+	iptables_fw_set_oauthservers();
+	//hector end
+	
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m mark --mark 0x%u -j " TABLE_WIFIDOG_LOCKED, FW_MARK_LOCKED);
 	iptables_load_ruleset("filter", "locked-users", TABLE_WIFIDOG_LOCKED);
 
@@ -405,12 +483,19 @@ iptables_fw_destroy(void)
 	debug(LOG_DEBUG, "Destroying chains in the NAT table");
 	iptables_fw_destroy_mention("nat", "PREROUTING", TABLE_WIFIDOG_OUTGOING);
 	iptables_do_command("-t nat -F " TABLE_WIFIDOG_AUTHSERVERS);
+	//hector add 2014/3/15
+	iptables_do_command("-t nat -F " TABLE_WIFIDOG_OAUTHSERVERS);
+	//hector end
 	iptables_do_command("-t nat -F " TABLE_WIFIDOG_OUTGOING);
 	iptables_do_command("-t nat -F " TABLE_WIFIDOG_WIFI_TO_ROUTER);
 	iptables_do_command("-t nat -F " TABLE_WIFIDOG_WIFI_TO_INTERNET);
 	iptables_do_command("-t nat -F " TABLE_WIFIDOG_GLOBAL);
 	iptables_do_command("-t nat -F " TABLE_WIFIDOG_UNKNOWN);
 	iptables_do_command("-t nat -X " TABLE_WIFIDOG_AUTHSERVERS);
+	//hector add 2014/3/15
+	iptables_do_command("-t nat -X " TABLE_WIFIDOG_OAUTHSERVERS);
+	//hector end
+	
 	iptables_do_command("-t nat -X " TABLE_WIFIDOG_OUTGOING);
 	iptables_do_command("-t nat -X " TABLE_WIFIDOG_WIFI_TO_ROUTER);
 	iptables_do_command("-t nat -X " TABLE_WIFIDOG_WIFI_TO_INTERNET);
@@ -426,6 +511,9 @@ iptables_fw_destroy(void)
 	iptables_fw_destroy_mention("filter", "FORWARD", TABLE_WIFIDOG_WIFI_TO_INTERNET);
 	iptables_do_command("-t filter -F " TABLE_WIFIDOG_WIFI_TO_INTERNET);
 	iptables_do_command("-t filter -F " TABLE_WIFIDOG_AUTHSERVERS);
+	//hector add 2014/3/15
+	iptables_do_command("-t filter -F " TABLE_WIFIDOG_OAUTHSERVERS);
+	//hector end
 	iptables_do_command("-t filter -F " TABLE_WIFIDOG_LOCKED);
 	iptables_do_command("-t filter -F " TABLE_WIFIDOG_GLOBAL);
 	iptables_do_command("-t filter -F " TABLE_WIFIDOG_VALIDATE);
@@ -433,6 +521,9 @@ iptables_fw_destroy(void)
 	iptables_do_command("-t filter -F " TABLE_WIFIDOG_UNKNOWN);
 	iptables_do_command("-t filter -X " TABLE_WIFIDOG_WIFI_TO_INTERNET);
 	iptables_do_command("-t filter -X " TABLE_WIFIDOG_AUTHSERVERS);
+	//hector add 2014/3/15
+	iptables_do_command("-t filter -X " TABLE_WIFIDOG_OAUTHSERVERS);
+	//hector end
 	iptables_do_command("-t filter -X " TABLE_WIFIDOG_LOCKED);
 	iptables_do_command("-t filter -X " TABLE_WIFIDOG_GLOBAL);
 	iptables_do_command("-t filter -X " TABLE_WIFIDOG_VALIDATE);

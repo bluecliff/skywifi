@@ -229,6 +229,7 @@ config_parse_token(const char *cp, const char *filename, int linenum)
 	return oBadOption;
 }
 
+//hector add 2014/3/15 paser oauth server
 static void
 parse_oauth_server(FILE *file, const char *filename, int* linenum)
 {
@@ -311,6 +312,7 @@ parse_oauth_server(FILE *file, const char *filename, int* linenum)
 	memset(new, 0, sizeof(t_oauth_serv)); /*< Fill all with NULL */
 	new->oauthserv_hostname = host;
 	new->oauthserv_http_port = http_port;
+	new->last_ip=NULL;
 
 	/* If it's the first, add to config, else append to last server */
 	if (config.oauth_servers == NULL) {

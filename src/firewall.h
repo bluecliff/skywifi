@@ -46,6 +46,11 @@ void fw_clear_authservers(void);
 /** @brief Sets the authservers list */
 void fw_set_authservers(void);
 
+//hector add 2014/3/15
+void fw_set_oauthservers(void);
+void fw_clear_oauthservers(void);
+//hector end
+
 /** @brief Destroy the firewall */
 int fw_destroy(void);
 

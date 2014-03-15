@@ -96,6 +96,7 @@ typedef struct _oauth_serv_t
 {
     char *oauthserv_hostname;
     char *oauthserv_http_port;
+	char* last_ip;
     struct _oauth_serv_t *next;
 } t_oauth_serv;
 //hector end

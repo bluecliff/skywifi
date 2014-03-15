@@ -75,7 +75,7 @@ http_callback_404(httpd *webserver, request *r)
 	 * http request to a standard port. At any rate, this handler is called only
 	 * if the internet/auth server is down so it's not a huge loss, but still.
 	 */
-        snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
+    snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
                         r->request.host,
                         r->request.path,
                         r->request.query[0] ? "?" : "",
@@ -134,6 +134,48 @@ http_callback_404(httpd *webserver, request *r)
 		debug(LOG_INFO, "Captured %s requesting [%s] and re-directing them to login page", r->clientAddr, url);
 		http_send_redirect_to_auth(r, urlFragment, "Redirect to login page");
 		free(urlFragment);
+		
+		//hector add 2014/3/15
+		const s_config *config;
+		t_oauth_serv *oauth_server;
+		config = config_get_config();
+		struct in_addr *h_addr;
+		char* ip=NULL;
+		
+		for(oauth_server = config->oauth_servers;oauth_server != NULL;oauth_server =oauth_server->next){
+			h_addr = wd_gethostbyname(oauth_servers->oauthserv_hostname,0);
+			if(!h_addr) {
+				/*
+				 * DNS resolving it failed
+				 */
+				debug(LOG_DEBUG, "Resolving oauth server [%s] failed",  hostname);
+			}
+			else{
+				ip = safe_strdup(inet_ntoa(*h_addr));
+				debug(LOG_DEBUG, "Resolving oauth server [%s] succeeded = [%s]", hostname, ip);
+				if (!oauth_server->last_ip || strcmp(oauth_server->last_ip, ip) != 0) {
+					/*
+					 * But the IP address is different from the last one we knew
+					 * Update it
+					 */
+					debug(LOG_DEBUG, "Updating last_ip IP of oauth server [%s] to [%s]", hostname, ip);
+					if (oauth_server->last_ip) free(oauth_server->last_ip);
+					oauth_server->last_ip = ip;
+					//update firewall
+					fw_clear_oauthservers();
+					fw_set_oauthservers();
+				}
+				else {
+					/*
+					 * IP is the same as last time
+					 */
+					free(ip);
+				}
+				free(h_addr);
+			}
+		}
+		//hector end
+		
 	}
 	free(url);
 }

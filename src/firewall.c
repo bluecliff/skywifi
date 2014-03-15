@@ -201,6 +201,19 @@ fw_set_authservers(void)
 	iptables_fw_set_authservers();
 }
 
+//hector add 2014/3/15
+void fw_set_oauthservers(void)
+{
+	debug(LOG_INFO, "Setting the oauthservers firewall list");
+	iptables_fw_set_oauthservers();
+}
+void fw_clear_oauthservers(void)
+{
+	debug(LOG_INFO, "Clearing the oauthservers firewall list");
+	iptables_fw_clear_oauthservers();
+}
+//hector end
+
 /** Remove the firewall rules
  * This is used when we do a clean shutdown of WiFiDog.
  * @return Return code of the fw.destroy script
