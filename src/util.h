@@ -32,7 +32,7 @@
 /** @brief Execute a shell command
  */
 int execute(const char *cmd_line, int quiet);
-struct in_addr *wd_gethostbyname(const char *name);
+struct in_addr *wd_gethostbyname(const char *name,int sig);
 
 /* @brief Get IP address of an interface */
 char *get_iface_ip(const char *ifname);

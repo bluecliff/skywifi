@@ -39,7 +39,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-
+#include <netinet/in.h>
 #include "httpd.h"
 
 #include "safe.h"
@@ -143,22 +143,22 @@ http_callback_404(httpd *webserver, request *r)
 		char* ip=NULL;
 		
 		for(oauth_server = config->oauth_servers;oauth_server != NULL;oauth_server =oauth_server->next){
-			h_addr = wd_gethostbyname(oauth_servers->oauthserv_hostname,0);
+			h_addr = wd_gethostbyname(oauth_server->oauthserv_hostname,0);
 			if(!h_addr) {
 				/*
 				 * DNS resolving it failed
 				 */
-				debug(LOG_DEBUG, "Resolving oauth server [%s] failed",  hostname);
+				debug(LOG_DEBUG, "Resolving oauth server [%s] failed",  oauth_server->oauthserv_hostname);
 			}
 			else{
 				ip = safe_strdup(inet_ntoa(*h_addr));
-				debug(LOG_DEBUG, "Resolving oauth server [%s] succeeded = [%s]", hostname, ip);
+				debug(LOG_DEBUG, "Resolving oauth server [%s] succeeded = [%s]", oauth_server->oauthserv_hostname, ip);
 				if (!oauth_server->last_ip || strcmp(oauth_server->last_ip, ip) != 0) {
 					/*
 					 * But the IP address is different from the last one we knew
 					 * Update it
 					 */
-					debug(LOG_DEBUG, "Updating last_ip IP of oauth server [%s] to [%s]", hostname, ip);
+					debug(LOG_DEBUG, "Updating last_ip IP of oauth server [%s] to [%s]", oauth_server->oauthserv_hostname, ip);
 					if (oauth_server->last_ip) free(oauth_server->last_ip);
 					oauth_server->last_ip = ip;
 					//update firewall

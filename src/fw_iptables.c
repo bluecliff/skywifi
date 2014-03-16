@@ -232,7 +232,7 @@ iptables_fw_set_authservers(void)
 }
 
 //hector add 2014/3/14
-void iptables_fw_clean_oauthservers(void)
+void iptables_fw_clear_oauthservers(void)
 {
 	iptables_do_command("-t filter -F " TABLE_WIFIDOG_OAUTHSERVERS);
 	iptables_do_command("-t nat -F " TABLE_WIFIDOG_OAUTHSERVERS);

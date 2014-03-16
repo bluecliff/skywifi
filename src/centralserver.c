@@ -246,7 +246,7 @@ int _connect_auth_server(int level) {
 	auth_server = config->auth_servers;
 	hostname = auth_server->authserv_hostname;
 	debug(LOG_DEBUG, "Level %d: Resolving auth server [%s]", level, hostname);
-	h_addr = wd_gethostbyname(hostname);
+	h_addr = wd_gethostbyname(hostname,1);
 	if (!h_addr) {
 		/*
 		 * DNS resolving it failed
@@ -257,7 +257,7 @@ int _connect_auth_server(int level) {
 
 		for (popularserver = popular_servers; *popularserver; popularserver++) {
 			debug(LOG_DEBUG, "Level %d: Resolving popular server [%s]", level, *popularserver);
-			h_addr = wd_gethostbyname(*popularserver);
+			h_addr = wd_gethostbyname(*popularserver,1);
 			if (h_addr) {
 				debug(LOG_DEBUG, "Level %d: Resolving popular server [%s] succeeded = [%s]", level, *popularserver, inet_ntoa(*h_addr));
 				break;

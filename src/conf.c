@@ -235,19 +235,19 @@ parse_oauth_server(FILE *file, const char *filename, int* linenum)
 {
 	char *host=NULL,
 		 *p1=NULL,
-		 *p2=NULL
+		 *p2=NULL,
 		 line[MAX_BUF];
 	int http_port,
 		opcode;
 	t_oauth_serv *new,
-				 *tmp;
+		     *tmp;
 
 	http_port=DEFAULT_OAUTHSERVERPORT;
 
 	while(memset(line,0,MAX_BUF) && fgets(line,MAX_BUF-1,file) &&(strchr(line,'}')==NULL) )
 	{
 		(*linenum)++;
-		for(p1=line,isblank(*p1);p1++);
+		for(p1=line;isblank(*p1);p1++);
 		/* End at end of line */
 		if ((p2 = strchr(p1, '#')) != NULL) 
 		{
