@@ -29,7 +29,7 @@
 
 #include "firewall.h"
 
-/*@{*/ 
+/*@{*/
 /**Iptable table names used by WifiDog */
 #define TABLE_WIFIDOG_OUTGOING  "WiFiDog_$ID$_Outgoing"
 #define TABLE_WIFIDOG_WIFI_TO_INTERNET "WiFiDog_$ID$_WIFI2Internet"
@@ -43,7 +43,7 @@
 #define TABLE_WIFIDOG_UNKNOWN   "WiFiDog_$ID$_Unknown"
 #define TABLE_WIFIDOG_LOCKED    "WiFiDog_$ID$_Locked"
 #define TABLE_WIFIDOG_TRUSTED    "WiFiDog_$ID$_Trusted"
-/*@}*/ 
+/*@}*/
 
 /** Used by iptables_fw_access to select if the client should be granted of denied access */
 typedef enum fw_access_t_ {

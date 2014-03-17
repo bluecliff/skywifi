@@ -56,7 +56,7 @@ extern pthread_mutex_t	client_list_mutex;
 extern pthread_mutex_t	config_mutex;
 
 /**
-Used to supress the error output of the firewall during destruction */ 
+Used to supress the error output of the firewall during destruction */
 static int fw_quiet = 0;
 
 /** @internal
@@ -89,7 +89,7 @@ iptables_insert_gateway_id(char **input)
 	*input=buffer;
 }
 
-/** @internal 
+/** @internal
  * */
 static int
 iptables_do_command(const char *format, ...)
@@ -161,7 +161,7 @@ iptables_compile(const char * table, const char *chain, const t_firewall_rule *r
 
 	snprintf(command, sizeof(command),  "-t %s -A %s ",table, chain);
 	if (rule->mask != NULL) {
-		snprintf((command + strlen(command)), (sizeof(command) - 
+		snprintf((command + strlen(command)), (sizeof(command) -
 					strlen(command)), "-d %s ", rule->mask);
 	}
 	if (rule->protocol != NULL) {
@@ -172,7 +172,7 @@ iptables_compile(const char * table, const char *chain, const t_firewall_rule *r
 		snprintf((command + strlen(command)), (sizeof(command) -
 					strlen(command)), "--dport %s ", rule->port);
 	}
-	snprintf((command + strlen(command)), (sizeof(command) - 
+	snprintf((command + strlen(command)), (sizeof(command) -
 				strlen(command)), "-j %s", mode);
 
 	free(mode);
@@ -242,13 +242,16 @@ void iptables_fw_set_oauthservers(void)
 {
 	const s_config *config;
 	t_oauth_serv *oauth_server;
-
+    t_ip *ipnode;
 	config = config_get_config();
 
 	for (oauth_server = config->oauth_servers; oauth_server != NULL; oauth_server = oauth_server->next) {
-		if (oauth_server->last_ip && strcmp(oauth_server->last_ip, "0.0.0.0") != 0) {
-			iptables_do_command("-t filter -A " TABLE_WIFIDOG_OAUTHSERVERS " -d %s -j ACCEPT", oauth_server->last_ip);
-			iptables_do_command("-t nat -A " TABLE_WIFIDOG_OAUTHSERVERS " -d %s -j ACCEPT", oauth_server->last_ip);
+		if (oauth_server->iplist){               //} && strcmp(oauth_server->last_ip, "0.0.0.0") != 0) {
+            for(ipnode=oauth_server->iplist;ipnode != NULL; ipnode = oauth_server->iplist->next)
+            {
+			    iptables_do_command("-t filter -A " TABLE_WIFIDOG_OAUTHSERVERS " -d %s -j ACCEPT", ipnode->ip);
+			    iptables_do_command("-t nat -A " TABLE_WIFIDOG_OAUTHSERVERS " -d %s -j ACCEPT", ipnode->ip);
+            }
 		}
 	}
 
@@ -257,7 +260,7 @@ void iptables_fw_set_oauthservers(void)
 	//config = config_get_config();
 	//struct in_addr *h_addr;
 	//char* ip=NULL;
-	
+
 	//for(oauth_server = config->oauth_servers;oauth_server != NULL;oauth_server =oauth_server->next){
 	//	h_addr = wd_gethostbyname(oauth_servers->oauthserv_hostname,0);
 	//	if(!h_addr) {
@@ -355,7 +358,7 @@ iptables_fw_init(void)
 	//hector add 2014/3/15
 	iptables_do_command("-t nat -N " TABLE_WIFIDOG_OAUTHSERVERS);
 	//hector end
-	
+
 	/* Assign links and rules to these new chains */
 	iptables_do_command("-t nat -A PREROUTING -i %s -j " TABLE_WIFIDOG_OUTGOING, config->gw_interface);
 
@@ -394,7 +397,7 @@ iptables_fw_init(void)
 	//hector add 2014/3/15
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_OAUTHSERVERS);
 	//hector end
-	
+
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_LOCKED);
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_GLOBAL);
 	iptables_do_command("-t filter -N " TABLE_WIFIDOG_VALIDATE);
@@ -410,7 +413,7 @@ iptables_fw_init(void)
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m state --state INVALID -j DROP");
 
 	/* XXX: Why this? it means that connections setup after authentication
-	   stay open even after the connection is done... 
+	   stay open even after the connection is done...
 	   iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m state --state RELATED,ESTABLISHED -j ACCEPT");*/
 
 	//Won't this rule NEVER match anyway?!?!? benoitg, 2007-06-23
@@ -421,12 +424,12 @@ iptables_fw_init(void)
 
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_AUTHSERVERS);
 	iptables_fw_set_authservers();
-	
+
 	//hector add 2014/3/15
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_OAUTHSERVERS);
 	iptables_fw_set_oauthservers();
 	//hector end
-	
+
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m mark --mark 0x%u -j " TABLE_WIFIDOG_LOCKED, FW_MARK_LOCKED);
 	iptables_load_ruleset("filter", "locked-users", TABLE_WIFIDOG_LOCKED);
 
@@ -495,7 +498,7 @@ iptables_fw_destroy(void)
 	//hector add 2014/3/15
 	iptables_do_command("-t nat -X " TABLE_WIFIDOG_OAUTHSERVERS);
 	//hector end
-	
+
 	iptables_do_command("-t nat -X " TABLE_WIFIDOG_OUTGOING);
 	iptables_do_command("-t nat -X " TABLE_WIFIDOG_WIFI_TO_ROUTER);
 	iptables_do_command("-t nat -X " TABLE_WIFIDOG_WIFI_TO_INTERNET);

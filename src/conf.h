@@ -27,7 +27,7 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-/*@{*/ 
+/*@{*/
 /** Defines */
 /** How many times should we try detecting the interface with the default route
  * (in seconds).  If set to 0, it will keep retrying forever */
@@ -43,7 +43,7 @@
 #else
 	#define DEFAULT_CONFIGFILE SYSCONFDIR"/wifidog.conf"
 	#define DEFAULT_HTMLMSGFILE SYSCONFDIR"/wifidog-msg.html"
-#endif	
+#endif
 #define DEFAULT_DAEMON 1
 #define DEFAULT_DEBUGLEVEL LOG_INFO
 #define DEFAULT_HTTPDMAXCONN 10
@@ -69,7 +69,7 @@
 #define DEFAULT_AUTHSERVMSGPATHFRAGMENT "gw_message/?"
 #define DEFAULT_AUTHSERVPINGPATHFRAGMENT "ping/?"
 #define DEFAULT_AUTHSERVAUTHPATHFRAGMENT "auth/?"
-/*@}*/ 
+/*@}*/
 
 /**
  * Information about the authentication server
@@ -92,11 +92,18 @@ typedef struct _auth_serv_t {
 } t_auth_serv;
 
 //hector add 2014/3/13
+typedef struct _ip_t
+{
+    char* ip;
+    _ip_t *next;
+} t_ip;
+
 typedef struct _oauth_serv_t
 {
     char *oauthserv_hostname;
     int oauthserv_http_port;
-    char* last_ip;
+//    char* last_ip;
+    struct t_ip* iplist;
     struct _oauth_serv_t *next;
 } t_oauth_serv;
 //hector end
@@ -158,9 +165,9 @@ typedef struct {
     char *gw_address;		/**< @brief Internal IP address for our web
 				     server */
     int gw_port;		/**< @brief Port the webserver will run on */
-    
+
     t_auth_serv	*auth_servers;	/**< @brief Auth servers list */
-    
+
     t_oauth_serv *oauth_servers; //hector add oauth servers list
 
     char *httpdname;		/**< @brief Name the web server will return when

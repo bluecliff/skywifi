@@ -184,8 +184,8 @@ config_init(void)
 	config.gw_address = NULL;
 	config.gw_port = DEFAULT_GATEWAYPORT;
 	config.auth_servers = NULL;
-	
-	config.oauth_servers = NULL; //hector add 
+
+	config.oauth_servers = NULL; //hector add
 
 	config.httpdname = NULL;
 	config.httpdrealm = DEFAULT_HTTPDNAME;
@@ -249,15 +249,15 @@ parse_oauth_server(FILE *file, const char *filename, int* linenum)
 		(*linenum)++;
 		for(p1=line;isblank(*p1);p1++);
 		/* End at end of line */
-		if ((p2 = strchr(p1, '#')) != NULL) 
+		if ((p2 = strchr(p1, '#')) != NULL)
 		{
 			*p2 = '\0';
-		} 
+		}
 		else if ((p2 = strchr(p1, '\r')) != NULL)
 		{
 			*p2 = '\0';
-		} 
-		else if ((p2 = strchr(p1, '\n')) != NULL) 
+		}
+		else if ((p2 = strchr(p1, '\n')) != NULL)
 		{
 			*p2 = '\0';
 		}
@@ -275,7 +275,7 @@ parse_oauth_server(FILE *file, const char *filename, int* linenum)
 			/* skip all further blanks. */
 			while (isblank(*p2))
 				p2++;
-			
+
 			/* Get opcode */
 			opcode = config_parse_token(p1, filename, *linenum);
 			switch(opcode)
@@ -312,13 +312,13 @@ parse_oauth_server(FILE *file, const char *filename, int* linenum)
 	memset(new, 0, sizeof(t_oauth_serv)); /*< Fill all with NULL */
 	new->oauthserv_hostname = host;
 	new->oauthserv_http_port = http_port;
-	new->last_ip=NULL;
-
+//	new->last_ip=NULL;
+    new->iplist=NULL;
 	/* If it's the first, add to config, else append to last server */
 	if (config.oauth_servers == NULL) {
 		config.oauth_servers = new;
-	} 
-	else 
+	}
+	else
 	{
 		for (tmp = config.oauth_servers; tmp->next != NULL;tmp = tmp->next);
 		tmp->next = new;
@@ -326,7 +326,8 @@ parse_oauth_server(FILE *file, const char *filename, int* linenum)
 
 	debug(LOG_DEBUG, "OAuth server added");
 }
-
+//hector end
+//
 /** @internal
 Parses auth server information
 */
@@ -820,13 +821,13 @@ config_read(const char *filename)
 					parse_auth_server(fd, filename,
 							&linenum);
 					break;
-			
+
 				//hector add 2014/3/14
 				case oOauthServer:
 					parse_oauth_server(fd,filename,&linenum);
 					break;
 				//hector end
-					
+
 				case oFirewallRuleSet:
 					parse_firewall_ruleset(p1, fd, filename, &linenum);
 					break;
