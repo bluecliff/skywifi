@@ -57,6 +57,9 @@ void mark_auth_offline();
 /* @brief Returns a guess (true or false) on whether we're an auth server is online or not based on previous calls to mark_auth_online and mark_auth_offline */
 int is_auth_online();
 
+//hector add 2014/3/18
+void get_oauth_iplist();
+//hector end
 /*
  * @brief Creates a human-readable paragraph of the status of wifidog
  */

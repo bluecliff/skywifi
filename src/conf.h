@@ -95,6 +95,7 @@ typedef struct _auth_serv_t {
 typedef struct _ip_t
 {
     char* ip;
+    char isadded;
     _ip_t *next;
 } t_ip;
 

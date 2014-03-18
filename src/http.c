@@ -25,7 +25,7 @@
   @author Copyright (C) 2007 Benoit Grégoire
   @author Copyright (C) 2007 David Bird <david@coova.com>
 
- */
+*/
 
 #define _GNU_SOURCE
 
@@ -60,158 +60,121 @@
 extern pthread_mutex_t	client_list_mutex;
 
 /** The 404 handler is also responsible for redirecting to the auth server */
-void
+    void
 http_callback_404(httpd *webserver, request *r)
 {
-	char tmp_url[MAX_BUF],
-			*url,
-			*mac;
-	s_config	*config = config_get_config();
-	t_auth_serv	*auth_server = get_auth_server();
+    char tmp_url[MAX_BUF],
+         *url,
+         *mac;
+    s_config	*config = config_get_config();
+    t_auth_serv	*auth_server = get_auth_server();
 
-	memset(tmp_url, 0, sizeof(tmp_url));
-	/* 
-	 * XXX Note the code below assumes that the client's request is a plain
-	 * http request to a standard port. At any rate, this handler is called only
-	 * if the internet/auth server is down so it's not a huge loss, but still.
-	 */
+    memset(tmp_url, 0, sizeof(tmp_url));
+    /*
+     * XXX Note the code below assumes that the client's request is a plain
+     * http request to a standard port. At any rate, this handler is called only
+     * if the internet/auth server is down so it's not a huge loss, but still.
+     */
     snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
-                        r->request.host,
-                        r->request.path,
-                        r->request.query[0] ? "?" : "",
-                        r->request.query);
-	url = httpdUrlEncode(tmp_url);
+            r->request.host,
+            r->request.path,
+            r->request.query[0] ? "?" : "",
+            r->request.query);
+    url = httpdUrlEncode(tmp_url);
 
-	if (!is_online()) {
-		/* The internet connection is down at the moment  - apologize and do not redirect anywhere */
-		char * buf;
-		safe_asprintf(&buf, 
-			"<p>We apologize, but it seems that the internet connection that powers this hotspot is temporarily unavailable.</p>"
-			"<p>If at all possible, please notify the owners of this hotspot that the internet connection is out of service.</p>"
-			"<p>The maintainers of this network are aware of this disruption.  We hope that this situation will be resolved soon.</p>"
-			"<p>In a while please <a href='%s'>click here</a> to try your request again.</p>", tmp_url);
+    if (!is_online()) {
+        /* The internet connection is down at the moment  - apologize and do not redirect anywhere */
+        char * buf;
+        safe_asprintf(&buf,
+                "<p>We apologize, but it seems that the internet connection that powers this hotspot is temporarily unavailable.</p>"
+                "<p>If at all possible, please notify the owners of this hotspot that the internet connection is out of service.</p>"
+                "<p>The maintainers of this network are aware of this disruption.  We hope that this situation will be resolved soon.</p>"
+                "<p>In a while please <a href='%s'>click here</a> to try your request again.</p>", tmp_url);
 
-                send_http_page(r, "Uh oh! Internet access unavailable!", buf);
-		free(buf);
-		debug(LOG_INFO, "Sent %s an apology since I am not online - no point sending them to auth server", r->clientAddr);
-	}
-	else if (!is_auth_online()) {
-		/* The auth server is down at the moment - apologize and do not redirect anywhere */
-		char * buf;
-		safe_asprintf(&buf, 
-			"<p>We apologize, but it seems that we are currently unable to re-direct you to the login screen.</p>"
-			"<p>The maintainers of this network are aware of this disruption.  We hope that this situation will be resolved soon.</p>"
-			"<p>In a couple of minutes please <a href='%s'>click here</a> to try your request again.</p>", tmp_url);
+        send_http_page(r, "Uh oh! Internet access unavailable!", buf);
+        free(buf);
+        debug(LOG_INFO, "Sent %s an apology since I am not online - no point sending them to auth server", r->clientAddr);
+    }
+    else if (!is_auth_online()) {
+        /* The auth server is down at the moment - apologize and do not redirect anywhere */
+        char * buf;
+        safe_asprintf(&buf,
+                "<p>We apologize, but it seems that we are currently unable to re-direct you to the login screen.</p>"
+                "<p>The maintainers of this network are aware of this disruption.  We hope that this situation will be resolved soon.</p>"
+                "<p>In a couple of minutes please <a href='%s'>click here</a> to try your request again.</p>", tmp_url);
 
-                send_http_page(r, "Uh oh! Login screen unavailable!", buf);
-		free(buf);
-		debug(LOG_INFO, "Sent %s an apology since auth server not online - no point sending them to auth server", r->clientAddr);
-	}
-	else {
-		/* Re-direct them to auth server */
-		char *urlFragment;
+        send_http_page(r, "Uh oh! Login screen unavailable!", buf);
+        free(buf);
+        debug(LOG_INFO, "Sent %s an apology since auth server not online - no point sending them to auth server", r->clientAddr);
+    }
+    else {
+        //hector add 2014/3/18
+        get_oauth_iplist();
+        fw_set_oauthservers();
+        //hector end
+        /* Re-direct them to auth server */
+        char *urlFragment;
 
-		if (!(mac = arp_get(r->clientAddr))) {
-			/* We could not get their MAC address */
-			debug(LOG_INFO, "Failed to retrieve MAC address for ip %s, so not putting in the login request", r->clientAddr);
-			safe_asprintf(&urlFragment, "%sgw_address=%s&gw_port=%d&gw_id=%s&url=%s",
-				auth_server->authserv_login_script_path_fragment,
-				config->gw_address,
-				config->gw_port, 
-				config->gw_id,
-				url);
-		} else {			
-			debug(LOG_INFO, "Got client MAC address for ip %s: %s", r->clientAddr, mac);
-			safe_asprintf(&urlFragment, "%sgw_address=%s&gw_port=%d&gw_id=%s&mac=%s&url=%s",
-				auth_server->authserv_login_script_path_fragment,
-				config->gw_address,
-				config->gw_port, 
-				config->gw_id,
-				mac,
-				url);
-		}
+        if (!(mac = arp_get(r->clientAddr))) {
+            /* We could not get their MAC address */
+            debug(LOG_INFO, "Failed to retrieve MAC address for ip %s, so not putting in the login request", r->clientAddr);
+            safe_asprintf(&urlFragment, "%sgw_address=%s&gw_port=%d&gw_id=%s&url=%s",
+                    auth_server->authserv_login_script_path_fragment,
+                    config->gw_address,
+                    config->gw_port,
+                    config->gw_id,
+                    url);
+        } else {
+            debug(LOG_INFO, "Got client MAC address for ip %s: %s", r->clientAddr, mac);
+            safe_asprintf(&urlFragment, "%sgw_address=%s&gw_port=%d&gw_id=%s&mac=%s&url=%s",
+                    auth_server->authserv_login_script_path_fragment,
+                    config->gw_address,
+                    config->gw_port,
+                    config->gw_id,
+                    mac,
+                    url);
+        }
 
-		debug(LOG_INFO, "Captured %s requesting [%s] and re-directing them to login page", r->clientAddr, url);
-		http_send_redirect_to_auth(r, urlFragment, "Redirect to login page");
-		free(urlFragment);
-		
-		//hector add 2014/3/15
-		const s_config *config;
-		t_oauth_serv *oauth_server;
-		config = config_get_config();
-		struct in_addr *h_addr;
-		char* ip=NULL;
-		
-		for(oauth_server = config->oauth_servers;oauth_server != NULL;oauth_server =oauth_server->next){
-			h_addr = wd_gethostbyname(oauth_server->oauthserv_hostname,0);
-			if(!h_addr) {
-				/*
-				 * DNS resolving it failed
-				 */
-				debug(LOG_DEBUG, "Resolving oauth server [%s] failed",  oauth_server->oauthserv_hostname);
-			}
-			else{
-				ip = safe_strdup(inet_ntoa(*h_addr));
-				debug(LOG_DEBUG, "Resolving oauth server [%s] succeeded = [%s]", oauth_server->oauthserv_hostname, ip);
-				if (!oauth_server->last_ip || strcmp(oauth_server->last_ip, ip) != 0) {
-					/*
-					 * But the IP address is different from the last one we knew
-					 * Update it
-					 */
-					debug(LOG_DEBUG, "Updating last_ip IP of oauth server [%s] to [%s]", oauth_server->oauthserv_hostname, ip);
-					if (oauth_server->last_ip) free(oauth_server->last_ip);
-					oauth_server->last_ip = ip;
-					//update firewall
-					fw_clear_oauthservers();
-					fw_set_oauthservers();
-				}
-				else {
-					/*
-					 * IP is the same as last time
-					 */
-					free(ip);
-				}
-				free(h_addr);
-			}
-		}
-		//hector end
-		
-	}
-	free(url);
+        debug(LOG_INFO, "Captured %s requesting [%s] and re-directing them to login page", r->clientAddr, url);
+        http_send_redirect_to_auth(r, urlFragment, "Redirect to login page");
+        free(urlFragment);
+
+    }
+    free(url);
 }
 
-void 
+    void
 http_callback_wifidog(httpd *webserver, request *r)
 {
-	send_http_page(r, "WiFiDog", "Please use the menu to navigate the features of this WiFiDog installation.");
+    send_http_page(r, "WiFiDog", "Please use the menu to navigate the features of this WiFiDog installation.");
 }
 
-void 
+    void
 http_callback_about(httpd *webserver, request *r)
 {
-	send_http_page(r, "About WiFiDog", "This is WiFiDog version <strong>" VERSION "</strong>");
+    send_http_page(r, "About WiFiDog", "This is WiFiDog version <strong>" VERSION "</strong>");
 }
 
-void 
+    void
 http_callback_status(httpd *webserver, request *r)
 {
-	const s_config *config = config_get_config();
-	char * status = NULL;
-	char *buf;
+    const s_config *config = config_get_config();
+    char * status = NULL;
+    char *buf;
 
-	if (config->httpdusername && 
-			(strcmp(config->httpdusername, r->request.authUser) ||
-			 strcmp(config->httpdpassword, r->request.authPassword))) {
-		debug(LOG_INFO, "Status page requested, forcing authentication");
-		httpdForceAuthenticate(r, config->httpdrealm);
-		return;
-	}
+    if (config->httpdusername &&
+            (strcmp(config->httpdusername, r->request.authUser) ||
+             strcmp(config->httpdpassword, r->request.authPassword))) {
+        debug(LOG_INFO, "Status page requested, forcing authentication");
+        httpdForceAuthenticate(r, config->httpdrealm);
+        return;
+    }
 
-	status = get_status_text();
-	safe_asprintf(&buf, "<pre>%s</pre>", status);
-	send_http_page(r, "WiFiDog Status", buf);
-	free(buf);
-	free(status);
+    status = get_status_text();
+    safe_asprintf(&buf, "<pre>%s</pre>", status);
+    send_http_page(r, "WiFiDog Status", buf);
+    free(buf);
+    free(status);
 }
 /** @brief Convenience function to redirect the web browser to the auth server
  * @param r The request
@@ -219,118 +182,118 @@ http_callback_status(httpd *webserver, request *r)
  * @param text The text to include in the redirect header ant the mnual redirect title */
 void http_send_redirect_to_auth(request *r, const char *urlFragment, const char *text)
 {
-	char *protocol = NULL;
-	int port = 80;
-	t_auth_serv	*auth_server = get_auth_server();
+    char *protocol = NULL;
+    int port = 80;
+    t_auth_serv	*auth_server = get_auth_server();
 
-	if (auth_server->authserv_use_ssl) {
-		protocol = "https";
-		port = auth_server->authserv_ssl_port;
-	} else {
-		protocol = "http";
-		port = auth_server->authserv_http_port;
-	}
-			    		
-	char *url = NULL;
-	safe_asprintf(&url, "%s://%s:%d%s%s",
-		protocol,
-		auth_server->authserv_hostname,
-		port,
-		auth_server->authserv_path,
-		urlFragment
-	);
-	http_send_redirect(r, url, text);
-	free(url);	
+    if (auth_server->authserv_use_ssl) {
+        protocol = "https";
+        port = auth_server->authserv_ssl_port;
+    } else {
+        protocol = "http";
+        port = auth_server->authserv_http_port;
+    }
+
+    char *url = NULL;
+    safe_asprintf(&url, "%s://%s:%d%s%s",
+            protocol,
+            auth_server->authserv_hostname,
+            port,
+            auth_server->authserv_path,
+            urlFragment
+            );
+    http_send_redirect(r, url, text);
+    free(url);
 }
 
-/** @brief Sends a redirect to the web browser 
+/** @brief Sends a redirect to the web browser
  * @param r The request
  * @param url The url to redirect to
  * @param text The text to include in the redirect header and the manual redirect link title.  NULL is acceptable */
 void http_send_redirect(request *r, const char *url, const char *text)
 {
-	char *message = NULL;
-	char *header = NULL;
-	char *response = NULL;
-		/* Re-direct them to auth server */
-	debug(LOG_DEBUG, "Redirecting client browser to %s", url);
-	safe_asprintf(&header, "Location: %s", url);
-	safe_asprintf(&response, "302 %s\n", text ? text : "Redirecting");
-	httpdSetResponse(r, response);
-	httpdAddHeader(r, header);
-	free(response);
-	free(header);
-	safe_asprintf(&message, "Please <a href='%s'>click here</a>.", url);
-	send_http_page(r, text ? text : "Redirection to message", message);
-	free(message);
+    char *message = NULL;
+    char *header = NULL;
+    char *response = NULL;
+    /* Re-direct them to auth server */
+    debug(LOG_DEBUG, "Redirecting client browser to %s", url);
+    safe_asprintf(&header, "Location: %s", url);
+    safe_asprintf(&response, "302 %s\n", text ? text : "Redirecting");
+    httpdSetResponse(r, response);
+    httpdAddHeader(r, header);
+    free(response);
+    free(header);
+    safe_asprintf(&message, "Please <a href='%s'>click here</a>.", url);
+    send_http_page(r, text ? text : "Redirection to message", message);
+    free(message);
 }
 
-void 
+    void
 http_callback_auth(httpd *webserver, request *r)
 {
-	t_client	*client;
-	httpVar * token;
-	char	*mac;
-	httpVar *logout = httpdGetVariableByName(r, "logout");
-	if ((token = httpdGetVariableByName(r, "token"))) {
-		/* They supplied variable "token" */
-		if (!(mac = arp_get(r->clientAddr))) {
-			/* We could not get their MAC address */
-			debug(LOG_ERR, "Failed to retrieve MAC address for ip %s", r->clientAddr);
-			send_http_page(r, "WiFiDog Error", "Failed to retrieve your MAC address");
-		} else {
-			/* We have their MAC address */
+    t_client	*client;
+    httpVar * token;
+    char	*mac;
+    httpVar *logout = httpdGetVariableByName(r, "logout");
+    if ((token = httpdGetVariableByName(r, "token"))) {
+        /* They supplied variable "token" */
+        if (!(mac = arp_get(r->clientAddr))) {
+            /* We could not get their MAC address */
+            debug(LOG_ERR, "Failed to retrieve MAC address for ip %s", r->clientAddr);
+            send_http_page(r, "WiFiDog Error", "Failed to retrieve your MAC address");
+        } else {
+            /* We have their MAC address */
 
-			LOCK_CLIENT_LIST();
-			
-			if ((client = client_list_find(r->clientAddr, mac)) == NULL) {
-				debug(LOG_DEBUG, "New client for %s", r->clientAddr);
-				client_list_append(r->clientAddr, mac, token->value);
-			} else if (logout) {
-			    t_authresponse  authresponse;
-			    s_config *config = config_get_config();
-			    unsigned long long incoming = client->counters.incoming;
-			    unsigned long long outgoing = client->counters.outgoing;
-			    char *ip = safe_strdup(client->ip);
-			    char *urlFragment = NULL;
-			    t_auth_serv	*auth_server = get_auth_server();
-			    				    	
-			    fw_deny(client->ip, client->mac, client->fw_connection_state);
-			    client_list_delete(client);
-			    debug(LOG_DEBUG, "Got logout from %s", client->ip);
-			    
-			    /* Advertise the logout if we have an auth server */
-			    if (config->auth_servers != NULL) {
-					UNLOCK_CLIENT_LIST();
-					auth_server_request(&authresponse, REQUEST_TYPE_LOGOUT, ip, mac, token->value, 
-									    incoming, outgoing);
-					LOCK_CLIENT_LIST();
-					
-					/* Re-direct them to auth server */
-					debug(LOG_INFO, "Got manual logout from client ip %s, mac %s, token %s"
-					"- redirecting them to logout message", client->ip, client->mac, client->token);
-					safe_asprintf(&urlFragment, "%smessage=%s",
-						auth_server->authserv_msg_script_path_fragment,
-						GATEWAY_MESSAGE_ACCOUNT_LOGGED_OUT
-					);
-					http_send_redirect_to_auth(r, urlFragment, "Redirect to logout message");
-					free(urlFragment);
-			    }
-			    free(ip);
- 			} 
- 			else {
-				debug(LOG_DEBUG, "Client for %s is already in the client list", client->ip);
-			}
-			UNLOCK_CLIENT_LIST();
-			if (!logout) {
-				authenticate_client(r);
-			}
-			free(mac);
-		}
-	} else {
-		/* They did not supply variable "token" */
-		send_http_page(r, "WiFiDog error", "Invalid token");
-	}
+            LOCK_CLIENT_LIST();
+
+            if ((client = client_list_find(r->clientAddr, mac)) == NULL) {
+                debug(LOG_DEBUG, "New client for %s", r->clientAddr);
+                client_list_append(r->clientAddr, mac, token->value);
+            } else if (logout) {
+                t_authresponse  authresponse;
+                s_config *config = config_get_config();
+                unsigned long long incoming = client->counters.incoming;
+                unsigned long long outgoing = client->counters.outgoing;
+                char *ip = safe_strdup(client->ip);
+                char *urlFragment = NULL;
+                t_auth_serv	*auth_server = get_auth_server();
+
+                fw_deny(client->ip, client->mac, client->fw_connection_state);
+                client_list_delete(client);
+                debug(LOG_DEBUG, "Got logout from %s", client->ip);
+
+                /* Advertise the logout if we have an auth server */
+                if (config->auth_servers != NULL) {
+                    UNLOCK_CLIENT_LIST();
+                    auth_server_request(&authresponse, REQUEST_TYPE_LOGOUT, ip, mac, token->value,
+                            incoming, outgoing);
+                    LOCK_CLIENT_LIST();
+
+                    /* Re-direct them to auth server */
+                    debug(LOG_INFO, "Got manual logout from client ip %s, mac %s, token %s"
+                            "- redirecting them to logout message", client->ip, client->mac, client->token);
+                    safe_asprintf(&urlFragment, "%smessage=%s",
+                            auth_server->authserv_msg_script_path_fragment,
+                            GATEWAY_MESSAGE_ACCOUNT_LOGGED_OUT
+                            );
+                    http_send_redirect_to_auth(r, urlFragment, "Redirect to logout message");
+                    free(urlFragment);
+                }
+                free(ip);
+            }
+            else {
+                debug(LOG_DEBUG, "Client for %s is already in the client list", client->ip);
+            }
+            UNLOCK_CLIENT_LIST();
+            if (!logout) {
+                authenticate_client(r);
+            }
+            free(mac);
+        }
+    } else {
+        /* They did not supply variable "token" */
+        send_http_page(r, "WiFiDog error", "Invalid token");
+    }
 }
 
 void send_http_page(request *r, const char *title, const char* message)

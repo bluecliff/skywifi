@@ -16,13 +16,13 @@
  * 59 Temple Place - Suite 330        Fax:    +1-617-542-2652       *
  * Boston, MA  02111-1307,  USA       gnu@gnu.org                   *
  *                                                                  *
-\********************************************************************/
+ \********************************************************************/
 
 /* $Id$ */
 /** @file auth.h
-    @brief Authentication handling thread
-    @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
-*/
+  @brief Authentication handling thread
+  @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
+  */
 
 #ifndef _AUTH_H_
 #define _AUTH_H_
@@ -44,7 +44,7 @@ typedef enum {
     AUTH_LOCKED = 254 /**< Account has been locked */
 } t_authcode;
 
-/** 
+/**
  * @brief This structure contains all the information returned by the  authentication server
  */
 typedef struct _t_authresponse {

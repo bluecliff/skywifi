@@ -145,14 +145,14 @@ wd_gethostbyname(const char *name,int sig)
 		UNLOCK_GHBN();
 		return NULL;
 	}
-	
+
 	//hector add 2014/3/14
 	if(sig)
 	{
 		mark_online();
 	}
 	//hector end
-	
+
 
 	in_addr_temp = (struct in_addr *)he->h_addr_list[0];
 	h_addr->s_addr = in_addr_temp->s_addr;
@@ -161,6 +161,56 @@ wd_gethostbyname(const char *name,int sig)
 
 	return h_addr;
 }
+
+//hector add 2014/3/18
+void get_oauth_iplist()
+{
+    const s_config *config;
+    config = config_get_config();
+	t_oauth_serv *oauth_server;
+    t_ip *iplist;
+    struct hostent *he;
+	char* ip=null;
+
+	for(oauth_server = config->oauth_servers;oauth_server != null;oauth_server =oauth_server->next){
+
+    	//h_addr = safe_malloc(sizeof(struct in_addr));
+
+        LOCK_GHBN();
+	    he = gethostbyname(oauth_server->oauthserv_hostname);
+    	if (he == NULL) {
+//	    	free(h_addr);
+		    UNLOCK_GHBN();
+			debug(LOG_DEBUG, "Resolving oauth server [%s] failed",  oauth_server->oauthserv_hostname);
+		    continue;
+	    }
+        int i=0;
+        LOCK_CONFIG();
+        for(i=0;he->h_addr_list[i]!=NULL;i++){
+            ip = safe_strdup(inet_ntoa(*((struct in_addr *)he->h_addr_list[i]));
+            debug(log_debug,"resolving oauth server [%s] succeeded = [%s]",oauth_server->oauthserv_hostname,ip);
+            for(iplist=oauth_server->iplist;iplist!=NULL;iplist=iplist->next){
+                if(strcmp(iplist->ip,ip)==0){
+                    break;
+                }
+            }
+            if(iplist==NULL){
+                iplist=safe_malloc(sizeof(struct t_ip));
+                iplist->ip=ip;
+                iplist->isadded=0;
+                iplist->next=oauth_server->iplist;
+                oauth_server->iplist=iplist;
+            }
+            else{
+                free(ip);
+            }
+        }
+        UNLOCK_GHBN();
+        UNLOCK_CONFIG();
+	}
+
+}
+//hector end
 
 	char *
 get_iface_ip(const char *ifname)
@@ -245,7 +295,7 @@ get_iface_mac(const char *ifname)
 
 	hwaddr = ifr.ifr_hwaddr.sa_data;
 	close(s);
-	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X", 
+	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
 			hwaddr[0] & 0xFF,
 			hwaddr[1] & 0xFF,
 			hwaddr[2] & 0xFF,
@@ -320,7 +370,7 @@ get_ext_iface(void)
 		timeout.tv_sec = time(NULL) + EXT_INTERFACE_DETECT_RETRY_INTERVAL;
 		timeout.tv_nsec = 0;
 		/* Mutex must be locked for pthread_cond_timedwait... */
-		pthread_mutex_lock(&cond_mutex);	
+		pthread_mutex_lock(&cond_mutex);
 		/* Thread safe "sleep" */
 		pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
 		/* No longer needs to be locked */

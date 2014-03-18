@@ -16,14 +16,14 @@
  * 59 Temple Place - Suite 330        Fax:    +1-617-542-2652       *
  * Boston, MA  02111-1307,  USA       gnu@gnu.org                   *
  *                                                                  *
-\********************************************************************/
+ \********************************************************************/
 
 /* $Id$ */
 
 /** @file httpd_thread.c
-    @brief Handles on web request.
-    @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
-*/
+  @brief Handles on web request.
+  @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
+  */
 
 #define _GNU_SOURCE
 
@@ -44,32 +44,32 @@
 #include "httpd_thread.h"
 
 /** Main request handling thread.
-@param args Two item array of void-cast pointers to the httpd and request struct
-*/
-void
+  @param args Two item array of void-cast pointers to the httpd and request struct
+  */
+    void
 thread_httpd(void *args)
 {
-	void	**params;
-	httpd	*webserver;
-	request	*r;
-	
-	params = (void **)args;
-	webserver = *params;
-	r = *(params + 1);
-	free(params); /* XXX We must release this ourselves. */
-	
-	if (httpdReadRequest(webserver, r) == 0) {
-		/*
-		 * We read the request fine
-		 */
-		debug(LOG_DEBUG, "Processing request from %s", r->clientAddr);
-		debug(LOG_DEBUG, "Calling httpdProcessRequest() for %s", r->clientAddr);
-		httpdProcessRequest(webserver, r);
-		debug(LOG_DEBUG, "Returned from httpdProcessRequest() for %s", r->clientAddr);
-	}
-	else {
-		debug(LOG_DEBUG, "No valid request received from %s", r->clientAddr);
-	}
-	debug(LOG_DEBUG, "Closing connection with %s", r->clientAddr);
-	httpdEndRequest(r);
+    void	**params;
+    httpd	*webserver;
+    request	*r;
+
+    params = (void **)args;
+    webserver = *params;
+    r = *(params + 1);
+    free(params); /* XXX We must release this ourselves. */
+
+    if (httpdReadRequest(webserver, r) == 0) {
+        /*
+         * We read the request fine
+         */
+        debug(LOG_DEBUG, "Processing request from %s", r->clientAddr);
+        debug(LOG_DEBUG, "Calling httpdProcessRequest() for %s", r->clientAddr);
+        httpdProcessRequest(webserver, r);
+        debug(LOG_DEBUG, "Returned from httpdProcessRequest() for %s", r->clientAddr);
+    }
+    else {
+        debug(LOG_DEBUG, "No valid request received from %s", r->clientAddr);
+    }
+    debug(LOG_DEBUG, "Closing connection with %s", r->clientAddr);
+    httpdEndRequest(r);
 }

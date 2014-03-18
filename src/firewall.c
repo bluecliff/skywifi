@@ -26,7 +26,7 @@
   @brief Firewall update functions
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
   2006 Benoit Grégoire, Technologies Coeus inc. <bock@step.polymtl.ca>
- */
+  */
 
 #define _GNU_SOURCE
 
@@ -88,7 +88,7 @@ extern pid_t restart_orig_pid;
  * @param fw_connection_state fw_connection_state Tag
  * @return Return code of the command
  */
-int
+    int
 fw_allow(const char *ip, const char *mac, int fw_connection_state)
 {
     debug(LOG_DEBUG, "Allowing %s %s with fw_connection_state %d", ip, mac, fw_connection_state);
@@ -103,7 +103,7 @@ fw_allow(const char *ip, const char *mac, int fw_connection_state)
  * @param fw_connection_state fw_connection_state Tag
  * @return Return code of the command
  */
-int
+    int
 fw_deny(const char *ip, const char *mac, int fw_connection_state)
 {
     debug(LOG_DEBUG, "Denying %s %s with fw_connection_state %d", ip, mac, fw_connection_state);
@@ -118,28 +118,28 @@ fw_deny(const char *ip, const char *mac, int fw_connection_state)
  * IP address and return the MAC address bound to it.
  * @todo Make this function portable (using shell scripts?)
  */
-char           *
+    char           *
 arp_get(const char *req_ip)
 {
     FILE           *proc;
-	 char ip[16];
-	 char mac[18];
-	 char * reply = NULL;
+    char ip[16];
+    char mac[18];
+    char * reply = NULL;
 
     if (!(proc = fopen("/proc/net/arp", "r"))) {
         return NULL;
     }
 
     /* Skip first line */
-	 while (!feof(proc) && fgetc(proc) != '\n');
+    while (!feof(proc) && fgetc(proc) != '\n');
 
-	 /* Find ip, copy mac in reply */
-	 reply = NULL;
+    /* Find ip, copy mac in reply */
+    reply = NULL;
     while (!feof(proc) && (fscanf(proc, " %15[0-9.] %*s %*s %17[A-Fa-f0-9:] %*s %*s", ip, mac) == 2)) {
-		  if (strcmp(ip, req_ip) == 0) {
-				reply = safe_strdup(mac);
-				break;
-		  }
+        if (strcmp(ip, req_ip) == 0) {
+            reply = safe_strdup(mac);
+            break;
+        }
     }
 
     fclose(proc);
@@ -148,20 +148,20 @@ arp_get(const char *req_ip)
 }
 
 /** Initialize the firewall rules
- */
-int
+*/
+    int
 fw_init(void)
 {
     int flags, oneopt = 1, zeroopt = 0;
-	 int result = 0;
-	 t_client * client = NULL;
+    int result = 0;
+    t_client * client = NULL;
 
     debug(LOG_INFO, "Creating ICMP socket");
     if ((icmp_fd = socket (AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1 ||
             (flags = fcntl(icmp_fd, F_GETFL, 0)) == -1 ||
-             fcntl(icmp_fd, F_SETFL, flags | O_NONBLOCK) == -1 ||
-             setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &oneopt, sizeof(oneopt)) ||
-             setsockopt(icmp_fd, SOL_SOCKET, SO_DONTROUTE, &zeroopt, sizeof(zeroopt)) == -1) {
+            fcntl(icmp_fd, F_SETFL, flags | O_NONBLOCK) == -1 ||
+            setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &oneopt, sizeof(oneopt)) ||
+            setsockopt(icmp_fd, SOL_SOCKET, SO_DONTROUTE, &zeroopt, sizeof(zeroopt)) == -1) {
         debug(LOG_ERR, "Cannot create ICMP raw socket.");
         return 0;
     }
@@ -169,48 +169,50 @@ fw_init(void)
     debug(LOG_INFO, "Initializing Firewall");
     result = iptables_fw_init();
 
-	 if (restart_orig_pid) {
-		 debug(LOG_INFO, "Restoring firewall rules for clients inherited from parent");
-		 LOCK_CLIENT_LIST();
-		 client = client_get_first_client();
-		 while (client) {
-			 fw_allow(client->ip, client->mac, client->fw_connection_state);
-			 client = client->next;
-		 }
-		 UNLOCK_CLIENT_LIST();
-	 }
+    if (restart_orig_pid) {
+        debug(LOG_INFO, "Restoring firewall rules for clients inherited from parent");
+        LOCK_CLIENT_LIST();
+        client = client_get_first_client();
+        while (client) {
+            fw_allow(client->ip, client->mac, client->fw_connection_state);
+            client = client->next;
+        }
+        UNLOCK_CLIENT_LIST();
+    }
 
-	 return result;
+    return result;
 }
 
 /** Remove all auth server firewall whitelist rules
- */
-void
+*/
+    void
 fw_clear_authservers(void)
 {
-	debug(LOG_INFO, "Clearing the authservers list");
-	iptables_fw_clear_authservers();
+    debug(LOG_INFO, "Clearing the authservers list");
+    iptables_fw_clear_authservers();
 }
 
 /** Add the necessary firewall rules to whitelist the authservers
- */
-void
+*/
+    void
 fw_set_authservers(void)
 {
-	debug(LOG_INFO, "Setting the authservers list");
-	iptables_fw_set_authservers();
+    debug(LOG_INFO, "Setting the authservers list");
+    iptables_fw_set_authservers();
 }
 
 //hector add 2014/3/15
 void fw_set_oauthservers(void)
-{
-	debug(LOG_INFO, "Setting the oauthservers firewall list");
-	iptables_fw_set_oauthservers();
+
+    debug(LOG_INFO, "Setting the oauthservers firewall list");
+    LOCK_CONFIG();
+    iptables_fw_set_oauthservers();
+    UNLOCK_CONFIG();
 }
 void fw_clear_oauthservers(void)
 {
-	debug(LOG_INFO, "Clearing the oauthservers firewall list");
-	iptables_fw_clear_oauthservers();
+    debug(LOG_INFO, "Clearing the oauthservers firewall list");
+    iptables_fw_clear_oauthservers();
 }
 //hector end
 
@@ -218,7 +220,7 @@ void fw_clear_oauthservers(void)
  * This is used when we do a clean shutdown of WiFiDog.
  * @return Return code of the fw.destroy script
  */
-int
+    int
 fw_destroy(void)
 {
     if (icmp_fd != 0) {
@@ -233,7 +235,7 @@ fw_destroy(void)
 /**Probably a misnomer, this function actually refreshes the entire client list's traffic counter, re-authenticates every client with the central server and update's the central servers traffic counters and notifies it if a client has logged-out.
  * @todo Make this function smaller and use sub-fonctions
  */
-void
+    void
 fw_sync_with_authserver(void)
 {
     t_authresponse  authresponse;
@@ -255,10 +257,10 @@ fw_sync_with_authserver(void)
         ip = safe_strdup(p1->ip);
         token = safe_strdup(p1->token);
         mac = safe_strdup(p1->mac);
-	    outgoing = p1->counters.outgoing;
-	    incoming = p1->counters.incoming;
+        outgoing = p1->counters.outgoing;
+        incoming = p1->counters.incoming;
 
-	    UNLOCK_CLIENT_LIST();
+        UNLOCK_CLIENT_LIST();
         /* Ping the client, if he responds it'll keep activity on the link.
          * However, if the firewall blocks it, it will not help.  The suggested
          * way to deal witht his is to keep the DHCP lease time extremely
@@ -268,17 +270,17 @@ fw_sync_with_authserver(void)
         if (config->auth_servers != NULL) {
             auth_server_request(&authresponse, REQUEST_TYPE_COUNTERS, ip, mac, token, incoming, outgoing);
         }
-	    LOCK_CLIENT_LIST();
+        LOCK_CLIENT_LIST();
 
         if (!(p1 = client_list_find(ip, mac))) {
             debug(LOG_ERR, "Node %s was freed while being re-validated!", ip);
         } else {
-        	time_t	current_time=time(NULL);
-        	debug(LOG_INFO, "Checking client %s for timeout:  Last updated %ld (%ld seconds ago), timeout delay %ld seconds, current time %ld, ",
-                        p1->ip, p1->counters.last_updated, current_time-p1->counters.last_updated, config->checkinterval * config->clienttimeout, current_time);
+            time_t	current_time=time(NULL);
+            debug(LOG_INFO, "Checking client %s for timeout:  Last updated %ld (%ld seconds ago), timeout delay %ld seconds, current time %ld, ",
+                    p1->ip, p1->counters.last_updated, current_time-p1->counters.last_updated, config->checkinterval * config->clienttimeout, current_time);
             if (p1->counters.last_updated +
-				(config->checkinterval * config->clienttimeout)
-				<= current_time) {
+                    (config->checkinterval * config->clienttimeout)
+                    <= current_time) {
                 /* Timing out user */
                 debug(LOG_INFO, "%s - Inactive for more than %ld seconds, removing client and denying in firewall",
                         p1->ip, config->checkinterval * config->clienttimeout);
@@ -287,9 +289,9 @@ fw_sync_with_authserver(void)
 
                 /* Advertise the logout if we have an auth server */
                 if (config->auth_servers != NULL) {
-					UNLOCK_CLIENT_LIST();
-					auth_server_request(&authresponse, REQUEST_TYPE_LOGOUT, ip, mac, token, 0, 0);
-					LOCK_CLIENT_LIST();
+                    UNLOCK_CLIENT_LIST();
+                    auth_server_request(&authresponse, REQUEST_TYPE_LOGOUT, ip, mac, token, 0, 0);
+                    LOCK_CLIENT_LIST();
                 }
             } else {
                 /*
@@ -322,10 +324,10 @@ fw_sync_with_authserver(void)
                                 //fw_deny(p1->ip, p1->mac, p1->fw_connection_state);
 
                                 if (p1->fw_connection_state != FW_MARK_PROBATION) {
-     p1->counters.incoming = p1->counters.outgoing = 0;
+                                    p1->counters.incoming = p1->counters.outgoing = 0;
                                 }
                                 else {
-                                	//We don't want to clear counters if the user was in validation, it probably already transmitted data..
+                                    //We don't want to clear counters if the user was in validation, it probably already transmitted data..
                                     debug(LOG_INFO, "%s - Skipped clearing counters after all, the user was previously in validation", p1->ip);
                                 }
                                 p1->fw_connection_state = FW_MARK_KNOWN;
@@ -342,9 +344,9 @@ fw_sync_with_authserver(void)
                             debug(LOG_INFO, "%s - User in validation period", p1->ip);
                             break;
 
-                              case AUTH_ERROR:
-                                    debug(LOG_WARNING, "Error communicating with auth server - leaving %s as-is for now", p1->ip);
-                                    break;
+                        case AUTH_ERROR:
+                            debug(LOG_WARNING, "Error communicating with auth server - leaving %s as-is for now", p1->ip);
+                            break;
 
                         default:
                             debug(LOG_ERR, "I do not know about authentication code %d", authresponse.authcode);
@@ -361,68 +363,68 @@ fw_sync_with_authserver(void)
     UNLOCK_CLIENT_LIST();
 }
 
-void
+    void
 icmp_ping(const char *host)
 {
-	struct sockaddr_in saddr;
+    struct sockaddr_in saddr;
 #if defined(__linux__) || defined(__NetBSD__)
-	struct {
-		struct ip ip;
-		struct icmp icmp;
-	} packet;
+    struct {
+        struct ip ip;
+        struct icmp icmp;
+    } packet;
 #endif
-	unsigned int i, j;
-	int opt = 2000;
-	unsigned short id = rand16();
+    unsigned int i, j;
+    int opt = 2000;
+    unsigned short id = rand16();
 
-	memset(&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	inet_aton(host, &saddr.sin_addr);
+    memset(&saddr, 0, sizeof(saddr));
+    saddr.sin_family = AF_INET;
+    inet_aton(host, &saddr.sin_addr);
 #if defined(HAVE_SOCKADDR_SA_LEN) || defined(__NetBSD__)
-	saddr.sin_len = sizeof(struct sockaddr_in);
+    saddr.sin_len = sizeof(struct sockaddr_in);
 #endif
 
 #if defined(__linux__) || defined(__NetBSD__)
-	memset(&packet.icmp, 0, sizeof(packet.icmp));
-	packet.icmp.icmp_type = ICMP_ECHO;
-	packet.icmp.icmp_id = id;
+    memset(&packet.icmp, 0, sizeof(packet.icmp));
+    packet.icmp.icmp_type = ICMP_ECHO;
+    packet.icmp.icmp_id = id;
 
-	for (j = 0, i = 0; i < sizeof(struct icmp) / 2; i++)
-		j += ((unsigned short *)&packet.icmp)[i];
+    for (j = 0, i = 0; i < sizeof(struct icmp) / 2; i++)
+        j += ((unsigned short *)&packet.icmp)[i];
 
-	while (j >> 16)
-		j = (j & 0xffff) + (j >> 16);
+    while (j >> 16)
+        j = (j & 0xffff) + (j >> 16);
 
-	packet.icmp.icmp_cksum = (j == 0xffff) ? j : ~j;
+    packet.icmp.icmp_cksum = (j == 0xffff) ? j : ~j;
 
-	if (setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) == -1)
-		debug(LOG_ERR, "setsockopt(): %s", strerror(errno));
+    if (setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) == -1)
+        debug(LOG_ERR, "setsockopt(): %s", strerror(errno));
 
-	if (sendto(icmp_fd, (char *)&packet.icmp, sizeof(struct icmp), 0,
-	           (const struct sockaddr *)&saddr, sizeof(saddr)) == -1)
-		debug(LOG_ERR, "sendto(): %s", strerror(errno));
+    if (sendto(icmp_fd, (char *)&packet.icmp, sizeof(struct icmp), 0,
+                (const struct sockaddr *)&saddr, sizeof(saddr)) == -1)
+        debug(LOG_ERR, "sendto(): %s", strerror(errno));
 
-	opt = 1;
-	if (setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) == -1)
-		debug(LOG_ERR, "setsockopt(): %s", strerror(errno));
+    opt = 1;
+    if (setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) == -1)
+        debug(LOG_ERR, "setsockopt(): %s", strerror(errno));
 #endif
 
-	return;
+    return;
 }
 
 unsigned short rand16(void) {
-  static int been_seeded = 0;
+    static int been_seeded = 0;
 
-  if (!been_seeded) {
-    unsigned int seed = 0;
-    struct timeval now;
+    if (!been_seeded) {
+        unsigned int seed = 0;
+        struct timeval now;
 
-    /* not a very good seed but what the heck, it needs to be quickly acquired */
-    gettimeofday(&now, NULL);
-    seed = now.tv_sec ^ now.tv_usec ^ (getpid() << 16);
+        /* not a very good seed but what the heck, it needs to be quickly acquired */
+        gettimeofday(&now, NULL);
+        seed = now.tv_sec ^ now.tv_usec ^ (getpid() << 16);
 
-    srand(seed);
-    been_seeded = 1;
+        srand(seed);
+        been_seeded = 1;
     }
 
     /* Some rand() implementations have less randomness in low bits
@@ -430,5 +432,5 @@ unsigned short rand16(void) {
      * But most implementations don't touch the high bit, so we
      * ignore that one.
      **/
-      return( (unsigned short) (rand() >> 15) );
+    return( (unsigned short) (rand() >> 15) );
 }
