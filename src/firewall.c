@@ -73,6 +73,10 @@
 #include "centralserver.h"
 #include "client_list.h"
 
+//hector add
+extern pthread_mutex_t config_mutex;
+//hector end
+
 extern pthread_mutex_t client_list_mutex;
 
 /* from commandline.c */
@@ -203,7 +207,7 @@ fw_set_authservers(void)
 
 //hector add 2014/3/15
 void fw_set_oauthservers(void)
-
+{
     debug(LOG_INFO, "Setting the oauthservers firewall list");
     LOCK_CONFIG();
     iptables_fw_set_oauthservers();

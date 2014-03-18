@@ -170,9 +170,9 @@ void get_oauth_iplist()
 	t_oauth_serv *oauth_server;
     t_ip *iplist;
     struct hostent *he;
-	char* ip=null;
+	char* ip=NULL;
 
-	for(oauth_server = config->oauth_servers;oauth_server != null;oauth_server =oauth_server->next){
+	for(oauth_server = config->oauth_servers;oauth_server != NULL;oauth_server =oauth_server->next){
 
     	//h_addr = safe_malloc(sizeof(struct in_addr));
 
@@ -187,15 +187,15 @@ void get_oauth_iplist()
         int i=0;
         LOCK_CONFIG();
         for(i=0;he->h_addr_list[i]!=NULL;i++){
-            ip = safe_strdup(inet_ntoa(*((struct in_addr *)he->h_addr_list[i]));
-            debug(log_debug,"resolving oauth server [%s] succeeded = [%s]",oauth_server->oauthserv_hostname,ip);
+            ip = safe_strdup(inet_ntoa(*((struct in_addr *)he->h_addr_list[i])));
+            debug(LOG_DEBUG,"resolving oauth server [%s] succeeded = [%s]",oauth_server->oauthserv_hostname,ip);
             for(iplist=oauth_server->iplist;iplist!=NULL;iplist=iplist->next){
                 if(strcmp(iplist->ip,ip)==0){
                     break;
                 }
             }
             if(iplist==NULL){
-                iplist=safe_malloc(sizeof(struct t_ip));
+                iplist=safe_malloc(sizeof(t_ip));
                 iplist->ip=ip;
                 iplist->isadded=0;
                 iplist->next=oauth_server->iplist;

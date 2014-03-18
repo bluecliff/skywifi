@@ -96,7 +96,7 @@ typedef struct _ip_t
 {
     char* ip;
     char isadded;
-    _ip_t *next;
+    struct _ip_t *next;
 } t_ip;
 
 typedef struct _oauth_serv_t
@@ -104,7 +104,7 @@ typedef struct _oauth_serv_t
     char *oauthserv_hostname;
     int oauthserv_http_port;
 //    char* last_ip;
-    struct t_ip* iplist;
+    t_ip* iplist;
     struct _oauth_serv_t *next;
 } t_oauth_serv;
 //hector end

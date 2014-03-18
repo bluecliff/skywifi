@@ -247,7 +247,7 @@ void iptables_fw_set_oauthservers(void)
 
     for (oauth_server = config->oauth_servers; oauth_server != NULL; oauth_server = oauth_server->next) {
         if (oauth_server->iplist){               //} && strcmp(oauth_server->last_ip, "0.0.0.0") != 0) {
-            for(ipnode=oauth_server->iplist;ipnode != NULL; ipnode = oauth_server->iplist->next)
+            for(ipnode=oauth_server->iplist;ipnode != NULL; ipnode = ipnode->next)
             {
                 if(ipnode->isadded==0)
                 {
